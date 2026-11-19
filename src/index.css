@@ -1,0 +1,802 @@
+/*
+ * Design notes
+ * - Dark theme. Every colour lives in the variables below, so changing the
+ *   look later means editing this one block.
+ * - Text is near-white on near-black (contrast above 15:1). Team colours come
+ *   from the photo (ball yellow, racket cyan) and are light, so the numbers on
+ *   them are near-black (about 9:1 or better).
+ * - Colour roles: lime = Team A, cyan = Team B, white = the main action.
+ *   Nothing else uses those colours, so a colour always means one thing.
+ * - 100dvh = the *visible* viewport height on phones (ignores the browser bar).
+ * - touch-action: manipulation stops double-tap-to-zoom on rapid tapping.
+ */
+:root {
+  --bg: #0d1117;
+  --surface: #161b22; /* inputs, cards, secondary buttons */
+  --surface-2: #212934; /* highlighted scoreboard column */
+  --ink: #f0f3f6;
+  --muted: #a9b4c0;
+  --line: #3b4552;
+  --disabled-bg: #262d36;
+  --disabled-ink: #8b96a2;
+  --team-a: #d4e600; /* ball yellow: Team A button, name and highlights */
+  --team-b: #4cc2ff; /* racket cyan: Team B */
+  --on-team: #0d1117; /* dark text on the light team buttons */
+  --warn: #ff8f85;
+  --radius: 16px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  color-scheme: dark; /* dark scrollbars, form controls and date pickers */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #ffb300;
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ Scorer */
+
+.scorer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100dvh;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 28px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.golden {
+  /* White, not gold: gold would be too close to Team A's lime. */
+  background: var(--ink);
+  color: var(--bg);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 1rem;
+}
+
+.board {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.board th,
+.board td {
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.board thead th {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.board .name-col {
+  text-align: left;
+  width: 100%;
+  max-width: 0; /* lets long names truncate instead of stretching the table */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.15rem;
+}
+
+.board tbody tr {
+  border-top: 2px solid var(--line);
+}
+
+.board .team-A .name-col {
+  color: var(--team-a);
+}
+
+.board .team-B .name-col {
+  color: var(--team-b);
+}
+
+.board .sets-won {
+  font-size: 1.6rem;
+}
+
+.board .now {
+  background: var(--surface-2);
+  font-size: 2rem;
+}
+
+/* The header cell of that column keeps the band, but uses the same small header text as the rest. */
+.board thead .now {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.board sup {
+  font-size: 0.65em;
+  font-weight: 600;
+}
+
+.panel {
+  border: 3px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.panel p {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.panel .result {
+  font-size: 1.6rem;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Level-score and match-finished panels: take over the space the point buttons used. */
+.panel.fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 16px;
+}
+
+.panel.fill p {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.panel.fill .result {
+  font-size: clamp(2rem, 10vw, 2.8rem);
+  line-height: 1.1;
+}
+
+.panel.fill .panel-actions {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel.fill .panel-actions button {
+  min-height: 68px;
+  font-size: 1.2rem;
+}
+
+.panel-actions button {
+  flex: 1;
+  min-height: 52px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface);
+  font-weight: 700;
+}
+
+/* The finish box takes the winner's colour; a draw stays neutral. */
+.panel.win-A {
+  --winner: var(--team-a);
+}
+
+.panel.win-B {
+  --winner: var(--team-b);
+}
+
+.panel.win-A,
+.panel.win-B {
+  border-color: var(--winner);
+  background: color-mix(in srgb, var(--winner) 14%, var(--bg));
+}
+
+.panel.win-A .result,
+.panel.win-B .result {
+  color: var(--winner);
+}
+
+.panel.draw {
+  border-color: var(--line);
+}
+
+/* The two big point buttons share all the remaining height. */
+.points {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
+
+.point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 8px;
+  border: 0;
+  border-radius: 20px;
+  color: var(--on-team);
+  font-weight: 800;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.point.team-A {
+  background: var(--team-a);
+}
+
+.point.team-B {
+  background: var(--team-b);
+}
+
+.point:active:not(:disabled) {
+  filter: brightness(0.82);
+  transform: scale(0.99);
+}
+
+.point:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-ink);
+  cursor: default;
+}
+
+.point-name {
+  font-size: 1.2rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.point-score {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-size: clamp(4rem, 26vw, 9rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+}
+
+.controls.single {
+  grid-template-columns: 1fr;
+}
+
+.controls button {
+  min-height: 60px;
+  border-radius: 14px;
+  border: 3px solid var(--ink);
+  background: var(--surface);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.controls .menu {
+  border-color: var(--line);
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------- Setup */
+
+.setup {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+
+.setup h1 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.setup h2 {
+  margin: 20px 0 8px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.field span {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  font-size: 1.1rem; /* 16px+ stops iOS from zooming into the field */
+  background: var(--surface);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.choices.stacked {
+  grid-template-columns: 1fr;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.choice small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.choice.selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.choice.selected small {
+  color: var(--bg);
+  opacity: 0.8;
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepper span {
+  flex: 1;
+  font-weight: 700;
+}
+
+.stepper button {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.stepper button:disabled {
+  opacity: 0.35;
+}
+
+.stepper output {
+  min-width: 2ch;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  min-height: 48px;
+  font-weight: 600;
+}
+
+.toggle input {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  accent-color: var(--ink);
+}
+
+.error {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border: 2px solid var(--warn);
+  border-radius: 12px;
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.actions {
+  margin-top: 24px;
+}
+
+.back {
+  margin: 0 0 4px -8px;
+  padding: 10px 8px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Main call-to-action button, shared by the welcome and setup screens. */
+.primary {
+  width: 100%;
+  min-height: 64px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.primary:active:not(:disabled) {
+  filter: brightness(0.88);
+}
+
+.primary:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-ink);
+  cursor: default;
+}
+
+/* ----------------------------------------------------------------- Welcome */
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-width: 640px;
+  margin: 0 auto;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.hero-img {
+  display: block;
+  width: 100%;
+  height: clamp(260px, 46dvh, 440px);
+  object-fit: cover;
+  /* The wide photo is cropped to fit a portrait screen; keep the balls and both rackets in frame. */
+  object-position: 48% 60%;
+  border-radius: 0 0 28px 28px;
+  background: #3d7a4a; /* court green shown while the image loads */
+}
+
+.welcome-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 28px 20px 0;
+}
+
+.ball-bar {
+  width: 48px;
+  height: 6px;
+  margin-bottom: 14px;
+  border-radius: 3px;
+  background: #d4e600;
+}
+
+.welcome h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 12vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  max-width: 30ch;
+  margin: 14px 0 32px;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+/* margin-top: auto pushes the button and note to the bottom of the screen. */
+.welcome .primary {
+  margin-top: auto;
+}
+
+.welcome .note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ------------------------------------------------- Wide screens (responsive) */
+
+/*
+ * The phone layout above is the base. These rules only apply on wider windows,
+ * so phones are unaffected. Breakpoints:
+ *   700px+   tablets and small windows: a little more breathing room
+ *   900px+   desktop: two-column welcome and setup
+ *   760px+   (scorer only) side-by-side scorer, which also suits a phone held sideways
+ */
+
+@media (min-width: 700px) {
+  .welcome {
+    padding: 16px 16px max(24px, env(safe-area-inset-bottom));
+  }
+
+  .hero-img {
+    border-radius: 28px;
+  }
+}
+
+@media (min-width: 900px) {
+  /* Welcome: photo on the left, text on the right. */
+  .welcome {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 64px;
+    max-width: 1240px;
+    padding: 32px;
+  }
+
+  .hero-img {
+    flex: 1.25;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: calc(100dvh - 64px);
+    object-position: 50% 60%;
+  }
+
+  .welcome-body {
+    flex: 1;
+    justify-content: center;
+    max-width: 460px;
+    padding: 0;
+  }
+
+  .welcome h1 {
+    font-size: clamp(3.4rem, 5.5vw, 5rem);
+  }
+
+  .lead {
+    font-size: 1.25rem;
+    margin-bottom: 40px;
+  }
+
+  .welcome .primary {
+    margin-top: 0;
+  }
+
+  .welcome .note {
+    text-align: left;
+  }
+
+  /* Setup: Teams and Format side by side, 40-40 options in one row below. */
+  .setup {
+    max-width: 960px;
+    padding-top: 40px;
+  }
+
+  .setup h1 {
+    font-size: 2.4rem;
+  }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 56px;
+  }
+
+  .setup-grid .span-all {
+    grid-column: 1 / -1;
+  }
+
+  .choices.stacked {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .actions {
+    max-width: 420px;
+  }
+}
+
+/* Scorer: scoreboard and controls on the left, the two big buttons on the right. */
+@media (min-width: 760px) {
+  .scorer {
+    display: grid;
+    grid-template-columns: clamp(300px, 34vw, 420px) 1fr;
+    grid-template-rows: auto auto 1fr;
+    column-gap: 20px;
+    max-width: 1280px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  .status {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .board {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .controls {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  /* The point buttons, or the level/finished panel, take the whole right side. */
+  .points,
+  .panel.fill {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  .point-score {
+    font-size: clamp(5rem, min(13vw, 26dvh), 13rem);
+  }
+
+  .point-name {
+    font-size: 1.5rem;
+  }
+}
+
+/*
+ * Desktop and tablet: the left column has room, so make the scoreboard and controls larger.
+ * Needs a tall window too, so a phone held sideways (only ~390px tall) keeps the compact sizes.
+ */
+@media (min-width: 760px) and (min-height: 600px) {
+  .status {
+    font-size: 1.25rem;
+  }
+
+  .board th,
+  .board td {
+    padding: 10px 10px;
+    font-size: 1.8rem;
+  }
+
+  .board thead th,
+  .board thead .now {
+    font-size: 1rem;
+  }
+
+  .board .name-col {
+    font-size: 1.4rem;
+  }
+
+  .board .sets-won {
+    font-size: 2.2rem;
+  }
+
+  .board .now {
+    font-size: 2.8rem;
+  }
+
+  .controls button {
+    min-height: 76px;
+    font-size: 1.35rem;
+  }
+
+  .controls .menu {
+    font-size: 1.1rem;
+  }
+
+  .panel.fill .panel-actions {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
+/* Hover feedback for mouse users. Phones skip this, so a tap never leaves a stuck hover. */
+@media (hover: hover) {
+  .point:hover:not(:disabled) {
+    filter: brightness(1.07);
+  }
+
+  .primary:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  .choice:not(.selected):hover,
+  .stepper button:hover:not(:disabled),
+  .panel-actions button:hover,
+  .controls button:hover:not(:disabled) {
+    border-color: var(--ink);
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+}
