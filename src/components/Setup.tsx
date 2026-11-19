@@ -9,6 +9,9 @@ interface Props {
   onChange: (next: SetupState) => void
   onStart: (config: MatchConfig) => void
   onBack: () => void
+  /** The history link only shows when there is something to see. */
+  historyCount: number
+  onOpenHistory: () => void
 }
 
 const MODES: { value: Mode; label: string; hint: string }[] = [
@@ -22,7 +25,7 @@ const DEUCES: { value: DeuceChoice; label: string; hint: string }[] = [
   { value: 'traditional', label: 'Traditional', hint: 'Advantage, no limit' },
 ]
 
-export function Setup({ setup, onChange, onStart, onBack }: Props) {
+export function Setup({ setup, onChange, onStart, onBack, historyCount, onOpenHistory }: Props) {
   const config = buildConfig(setup)
   const errors = validateConfig(config)
   const patch = (p: Partial<SetupState>) => onChange({ ...setup, ...p })
@@ -35,9 +38,16 @@ export function Setup({ setup, onChange, onStart, onBack }: Props) {
 
   return (
     <main className="setup">
-      <button type="button" className="back" onClick={onBack}>
-        ← Back
-      </button>
+      <div className="setup-top">
+        <button type="button" className="back" onClick={onBack}>
+          ← Back
+        </button>
+        {historyCount > 0 && (
+          <button type="button" className="back" onClick={onOpenHistory}>
+            Match history ({historyCount})
+          </button>
+        )}
+      </div>
       <h1>New match</h1>
 
       {/* One column on a phone; Teams and Format sit side by side on a wide screen (see index.css). */}

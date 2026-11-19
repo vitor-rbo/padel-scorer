@@ -10,6 +10,7 @@ interface Props {
   onHistory: (next: MatchHistory) => void
   onRematch: () => void
   onNewMatch: () => void
+  onOpenHistory: () => void
 }
 
 function statusText(state: MatchState): string {
@@ -34,7 +35,7 @@ function buttonScore(state: MatchState, team: TeamId): string {
   return cur.gameLabels?.[team] ?? ''
 }
 
-export function Scorer({ teams, history, onHistory, onRematch, onNewMatch }: Props) {
+export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpenHistory }: Props) {
   const state = history.present
   const board = getScoreboard(state)
   const live = state.status === 'inProgress'
@@ -91,6 +92,9 @@ export function Scorer({ teams, history, onHistory, onRematch, onNewMatch }: Pro
             </button>
             <button type="button" onClick={onNewMatch}>
               New match
+            </button>
+            <button type="button" onClick={onOpenHistory}>
+              Match history
             </button>
           </div>
         </section>

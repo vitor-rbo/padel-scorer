@@ -2,15 +2,54 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- viewport-fit=cover lets us use the full screen; the CSS adds safe-area padding for notches. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0d1117" />
     <meta name="color-scheme" content="dark" />
+
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- iPhone: open full screen when launched from the home screen. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Padel Scorer" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
     <title>Padel Scorer</title>
+    <meta
+      name="description"
+      content="Simple score keeping for padel. Big buttons, undo, match history, and it works offline."
+    />
+
+    <!-- Keep the app out of search engines. Link previews (below) still work when someone shares the link. -->
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!--
+      Link preview for chat apps and social media. Preview crawlers need ABSOLUTE addresses, so the
+      image address below includes the site's domain. If the domain ever changes, update it here.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Padel Scorer" />
+    <meta property="og:description" content="Simple score keeping for padel. Tap a point, fix a mistake with undo, and carry on playing." />
+    <meta property="og:image" content="https://padelscorer.vercel.app/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Padel Scorer: two padel rackets and tennis balls on a court" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Paint the dark background immediately so there is no white flash while the app loads. -->
+    <style>
+      html,
+      body {
+        background: #0d1117;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Padel Scorer needs JavaScript to run. Please turn it on in your browser.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

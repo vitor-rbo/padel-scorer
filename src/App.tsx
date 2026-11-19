@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { History } from './components/History'
 import { Scorer } from './components/Scorer'
 import { Setup } from './components/Setup'
 import { Welcome } from './components/Welcome'
+import { newId } from './archive'
+import { applyHistory, clearFinished, deleteFinished, reconcile } from './matches'
 import { createHistory } from './scoring'
 import type { MatchConfig, MatchHistory } from './scoring'
 import type { SetupState, Teams } from './setup'
@@ -9,19 +12,19 @@ import { loadApp, saveApp } from './storage'
 import type { AppData } from './storage'
 
 /**
- * Three screens:
- *   Welcome -> Setup -> Scorer
+ * Screens:
+ *   Welcome -> Setup -> Scorer, plus Match history, which opens from Setup or from a finished match.
  *
- * If a match is in progress (app.session), we always show the Scorer, even
- * right after a refresh, so you never lose your place on court. The welcome
- * and setup screens only matter when there is no match yet. Which of those two
- * is showing is remembered in `screen` (plain memory, not saved: opening the
- * app fresh with no match always starts on Welcome).
+ * If a match is in progress (app.session), we show the Scorer, even right after a refresh, so you
+ * never lose your place on court. Welcome and Setup only matter when there is no match yet.
+ * Which of those two is showing is kept in `screen`, and whether the history is open in
+ * `historyOpen`. Neither is saved: opening the app fresh with no match starts on Welcome.
  */
 export default function App() {
-  // Passing a function to useState means loadApp() runs once, not every render.
-  const [app, setApp] = useState<AppData>(loadApp)
+  // Passing a function to useState means this runs once, not on every render.
+  const [app, setApp] = useState<AppData>(() => reconcile(loadApp(), Date.now(), newId))
   const [screen, setScreen] = useState<'welcome' | 'setup'>('welcome')
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   useEffect(() => {
     saveApp(app)
@@ -32,15 +35,30 @@ export default function App() {
   const hasSession = app.session !== null
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [screen, hasSession])
+  }, [screen, hasSession, historyOpen])
 
   const setSetup = (setup: SetupState) => setApp((a) => ({ ...a, setup }))
 
   const startMatch = (config: MatchConfig, teams: Teams) =>
     setApp((a) => ({ ...a, session: { teams, history: createHistory(config) } }))
 
+  // Also adds the match to the history when it finishes (and removes it if the win is undone).
   const setHistory = (history: MatchHistory) =>
-    setApp((a) => (a.session ? { ...a, session: { ...a.session, history } } : a))
+    setApp((a) => applyHistory(a, history, Date.now(), newId))
+
+  const openHistory = () => setHistoryOpen(true)
+  const historyCount = app.finished.length
+
+  if (historyOpen) {
+    return (
+      <History
+        entries={app.finished}
+        onBack={() => setHistoryOpen(false)}
+        onDelete={(id) => setApp((a) => deleteFinished(a, id))}
+        onClear={() => setApp((a) => clearFinished(a))}
+      />
+    )
+  }
 
   if (app.session) {
     const { session } = app
@@ -56,6 +74,7 @@ export default function App() {
           setScreen('setup')
           setApp((a) => ({ ...a, session: null }))
         }}
+        onOpenHistory={openHistory}
       />
     )
   }
@@ -70,6 +89,8 @@ export default function App() {
       onChange={setSetup}
       onStart={(config) => startMatch(config, app.setup.names)}
       onBack={() => setScreen('welcome')}
+      historyCount={historyCount}
+      onOpenHistory={openHistory}
     />
   )
 }

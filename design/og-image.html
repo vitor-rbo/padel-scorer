@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+  Source for the link-preview image (public/og-image.png), 1200 x 630.
+  Rendered from this file with a headless browser; edit it and re-render to change the image.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0d1117;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color: #f0f3f6;
+      }
+      .wrap {
+        display: flex;
+        width: 1200px;
+        height: 630px;
+      }
+      .text {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 24px 0 80px;
+      }
+      .bar {
+        width: 84px;
+        height: 12px;
+        margin-bottom: 28px;
+        border-radius: 6px;
+        background: #d4e600;
+      }
+      h1 {
+        margin: 0;
+        font-size: 110px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      p {
+        margin: 28px 0 0;
+        max-width: 440px;
+        font-size: 36px;
+        line-height: 1.35;
+        color: #a9b4c0;
+      }
+      .photo {
+        width: 560px;
+        height: 630px;
+        object-fit: cover;
+        object-position: 48% 60%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="text">
+        <span class="bar"></span>
+        <h1>Padel Scorer</h1>
+        <p>Simple score keeping for padel.</p>
+      </div>
+      <img class="photo" src="../src/assets/hero.webp" alt="" />
+    </div>
+  </body>
+</html>

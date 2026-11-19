@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHistory, recordPoint, STANDARD_CONFIG } from './scoring'
 import { DEFAULT_SETUP } from './setup'
+import type { FinishedMatch } from './archive'
 import { EMPTY_APP, loadApp, saveApp } from './storage'
 import type { AppData } from './storage'
 
@@ -24,6 +25,19 @@ const sampleApp = (): AppData => ({
     teams: { A: 'Ana & Rui', B: '' },
     history: recordPoint(recordPoint(createHistory(STANDARD_CONFIG), 'A'), 'B'),
   },
+  finished: [],
+})
+
+const sampleFinished = (id: string): FinishedMatch => ({
+  id,
+  finishedAt: 1_700_000_000_000,
+  teams: { A: 'Ana & Rui', B: 'Marco & Tiago' },
+  config: STANDARD_CONFIG,
+  completedSets: [
+    { kind: 'normal', games: { A: 6, B: 3 }, tieBreak: null, winner: 'A' },
+    { kind: 'normal', games: { A: 6, B: 4 }, tieBreak: null, winner: 'A' },
+  ],
+  winner: 'A',
 })
 
 beforeEach(() => vi.stubGlobal('localStorage', fakeStorage()))
@@ -82,6 +96,37 @@ describe('storage', () => {
     const bad = { version: 1, setup: sampleApp().setup, session: { teams: {}, history: 5 } }
     vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify(bad) }))
     expect(loadApp().session).toBeNull()
+  })
+
+  it('round-trips the match history', () => {
+    const app: AppData = { ...sampleApp(), finished: [sampleFinished('a'), sampleFinished('b')] }
+    saveApp(app)
+    expect(loadApp().finished).toEqual(app.finished)
+  })
+
+  it('data saved before match history existed loads with an empty history', () => {
+    const old = JSON.parse(JSON.stringify({ version: 1, ...sampleApp() }))
+    delete old.finished
+    vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify(old) }))
+    const loaded = loadApp()
+    expect(loaded.finished).toEqual([])
+    expect(loaded.session).not.toBeNull() // the match in progress is kept
+  })
+
+  it('drops damaged history entries but keeps the good ones', () => {
+    const bad = JSON.parse(JSON.stringify({ version: 1, ...sampleApp() }))
+    const wrongWinner = { ...sampleFinished('bad1'), winner: 'nobody' }
+    const badRules = { ...sampleFinished('bad2'), config: { ...STANDARD_CONFIG, gamesPerSet: -1 } }
+    bad.finished = [sampleFinished('good'), wrongWinner, badRules, 'junk', null]
+    vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify(bad) }))
+    expect(loadApp().finished.map((e) => e.id)).toEqual(['good'])
+  })
+
+  it('keeps the id that links a finished match to its history entry', () => {
+    const app = sampleApp()
+    const withId: AppData = { ...app, session: { ...app.session!, finishedId: 'abc' } }
+    saveApp(withId)
+    expect(loadApp().session?.finishedId).toBe('abc')
   })
 
   it('does not crash when storage throws (private mode / blocked)', () => {

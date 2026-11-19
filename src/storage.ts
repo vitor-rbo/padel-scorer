@@ -1,3 +1,5 @@
+import { MAX_FINISHED } from './archive'
+import type { FinishedMatch } from './archive'
 import type { MatchHistory } from './scoring'
 import { validateConfig } from './scoring'
 import type { SetupState, Teams } from './setup'
@@ -17,15 +19,19 @@ const KEY = 'padel-scorer:v1'
 export interface Session {
   teams: Teams
   history: MatchHistory
+  /** Id of this match's entry in the match history, once it has finished. */
+  finishedId?: string
 }
 
 export interface AppData {
   setup: SetupState
   /** null = no match in progress (show the setup screen). */
   session: Session | null
+  /** Finished matches, newest first. */
+  finished: FinishedMatch[]
 }
 
-export const EMPTY_APP: AppData = { setup: DEFAULT_SETUP, session: null }
+export const EMPTY_APP: AppData = { setup: DEFAULT_SETUP, session: null, finished: [] }
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
@@ -73,8 +79,19 @@ function looksLikeSession(v: unknown): v is Session {
   const present = h.present as Record<string, unknown>
   if (!isObject(present.config) || !Array.isArray(present.completedSets)) return false
   if (typeof present.status !== 'string') return false
+  if (v.finishedId !== undefined && typeof v.finishedId !== 'string') return false
   // The engine's own validator checks the rules are usable.
   return validateConfig(present.config as never).length === 0
+}
+
+function looksLikeFinished(v: unknown): v is FinishedMatch {
+  if (!isObject(v) || typeof v.id !== 'string' || typeof v.finishedAt !== 'number') return false
+  if (!isObject(v.teams) || typeof v.teams.A !== 'string' || typeof v.teams.B !== 'string') return false
+  if (!Array.isArray(v.completedSets) || !v.completedSets.every((s) => isObject(s) && isObject(s.games))) {
+    return false
+  }
+  if (v.winner !== 'A' && v.winner !== 'B' && v.winner !== 'draw') return false
+  return isObject(v.config) && validateConfig(v.config as never).length === 0
 }
 
 export function loadApp(): AppData {
@@ -86,7 +103,11 @@ export function loadApp(): AppData {
     const savedSetup = migrateSetup(data.setup)
     const setup = looksLikeSetup(savedSetup) ? savedSetup : DEFAULT_SETUP
     const session = looksLikeSession(data.session) ? data.session : null
-    return { setup, session }
+    // Data saved before match history existed has no "finished" list: start it empty.
+    const finished = Array.isArray(data.finished)
+      ? data.finished.filter(looksLikeFinished).slice(0, MAX_FINISHED)
+      : []
+    return { setup, session, finished }
   } catch {
     return EMPTY_APP
   }

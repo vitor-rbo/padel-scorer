@@ -1,4 +1,5 @@
 import heroUrl from '../assets/hero.webp'
+import { useInstall } from '../install'
 
 interface Props {
   onStart: () => void
@@ -10,6 +11,8 @@ interface Props {
  * correctly and always pick up a new image if you replace it.
  */
 export function Welcome({ onStart }: Props) {
+  const { mode, install } = useInstall()
+
   return (
     <main className="welcome">
       <img
@@ -34,6 +37,18 @@ export function Welcome({ onStart }: Props) {
         <button type="button" className="primary" onClick={onStart}>
           Start a match
         </button>
+
+        {mode === 'prompt' && (
+          <button type="button" className="secondary" onClick={install}>
+            Install app
+          </button>
+        )}
+        {mode === 'ios' && (
+          <p className="hint">
+            To install on iPhone: tap the Share button, then Add to Home Screen.
+          </p>
+        )}
+
         <p className="note">Your match is saved on this device, so a refresh won't lose the score.</p>
       </div>
     </main>
