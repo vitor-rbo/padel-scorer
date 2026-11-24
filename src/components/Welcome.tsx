@@ -3,6 +3,9 @@ import { useInstall } from '../install'
 
 interface Props {
   onStart: () => void
+  /** A tournament is in progress: the button resumes it instead of starting a new one. */
+  hasTournament: boolean
+  onTournament: () => void
 }
 
 /**
@@ -10,7 +13,7 @@ interface Props {
  * linking /public) lets Vite fingerprint the file name, so browsers cache it
  * correctly and always pick up a new image if you replace it.
  */
-export function Welcome({ onStart }: Props) {
+export function Welcome({ onStart, hasTournament, onTournament }: Props) {
   const { mode, install } = useInstall()
 
   return (
@@ -36,6 +39,10 @@ export function Welcome({ onStart }: Props) {
 
         <button type="button" className="primary" onClick={onStart}>
           Start a match
+        </button>
+
+        <button type="button" className="secondary" onClick={onTournament}>
+          {hasTournament ? 'Resume tournament' : 'Start a tournament'}
         </button>
 
         {mode === 'prompt' && (

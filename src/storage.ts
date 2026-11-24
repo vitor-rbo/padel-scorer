@@ -4,6 +4,10 @@ import type { MatchHistory } from './scoring'
 import { validateConfig } from './scoring'
 import type { SetupState, Teams } from './setup'
 import { DEFAULT_SETUP } from './setup'
+import type { Tournament } from './tournament/tournament'
+import { looksLikeTournament } from './tournament/validate'
+import { looksLikeBracket } from './tournament/bracket'
+import type { Bracket } from './tournament/bracket'
 
 /**
  * Saving to localStorage so a refresh or accidental close keeps the score.
@@ -29,9 +33,19 @@ export interface AppData {
   session: Session | null
   /** Finished matches, newest first. */
   finished: FinishedMatch[]
+  /** The tournament in progress, if any. Kept apart from single matches and the match history. */
+  tournament: Tournament | null
+  /** A double elimination bracket in progress, if any. Separate from the round robin tournament. */
+  bracket: Bracket | null
 }
 
-export const EMPTY_APP: AppData = { setup: DEFAULT_SETUP, session: null, finished: [] }
+export const EMPTY_APP: AppData = {
+  setup: DEFAULT_SETUP,
+  session: null,
+  finished: [],
+  tournament: null,
+  bracket: null,
+}
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
@@ -107,7 +121,10 @@ export function loadApp(): AppData {
     const finished = Array.isArray(data.finished)
       ? data.finished.filter(looksLikeFinished).slice(0, MAX_FINISHED)
       : []
-    return { setup, session, finished }
+    // Data saved before tournaments existed has no "tournament": start without one.
+    const tournament = looksLikeTournament(data.tournament) ? data.tournament : null
+    const bracket = looksLikeBracket(data.bracket) ? data.bracket : null
+    return { setup, session, finished, tournament, bracket }
   } catch {
     return EMPTY_APP
   }

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHistory, recordPoint, STANDARD_CONFIG } from './scoring'
+import type { TeamId } from './scoring'
 import { DEFAULT_SETUP } from './setup'
+import { bracketPoint, createBracket } from './tournament/bracket'
+import { createTournament } from './tournament/tournament'
 import type { FinishedMatch } from './archive'
 import { EMPTY_APP, loadApp, saveApp } from './storage'
 import type { AppData } from './storage'
@@ -26,6 +29,8 @@ const sampleApp = (): AppData => ({
     history: recordPoint(recordPoint(createHistory(STANDARD_CONFIG), 'A'), 'B'),
   },
   finished: [],
+  tournament: null,
+  bracket: null,
 })
 
 const sampleFinished = (id: string): FinishedMatch => ({
@@ -146,5 +151,80 @@ describe('storage', () => {
     vi.stubGlobal('localStorage', undefined)
     expect(loadApp()).toEqual(EMPTY_APP)
     expect(saveApp(sampleApp())).toBe(false)
+  })
+})
+
+describe('tournament storage', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', fakeStorage())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('round-trips a tournament in progress', () => {
+    const t = createTournament(['Ana', 'Bia', 'Caio', 'Dina'], 16)
+    const played = { ...t, fixtures: t.fixtures.map((f, i) => (i === 0 ? { ...f, log: ['A', 'B', 'A'] as TeamId[] } : f)), active: 0 }
+    const app: AppData = { ...sampleApp(), tournament: played }
+    saveApp(app)
+    expect(loadApp().tournament).toEqual(played)
+  })
+
+  it('data saved before tournaments existed loads with no tournament', () => {
+    const old = JSON.parse(JSON.stringify({ version: 1, ...sampleApp() }))
+    delete old.tournament
+    vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify(old) }))
+    const loaded = loadApp()
+    expect(loaded.tournament).toBeNull()
+    expect(loaded.session).not.toBeNull()
+  })
+
+  it('drops a corrupted tournament but keeps the rest', () => {
+    const good = JSON.parse(JSON.stringify({ version: 1, ...sampleApp() }))
+    const make = () => JSON.parse(JSON.stringify(createTournament(['a', 'b', 'c'], 16)))
+    const bad = [
+      'junk',
+      { ...make(), teams: ['a', 'b'] }, // too few teams
+      { ...make(), pointsPerMatch: 'sixteen' },
+      { ...make(), fixtures: [{ a: 0, b: 9, round: 1, log: [] }] }, // unknown team
+      { ...make(), fixtures: [{ a: 0, b: 1, round: 1, log: ['A', 'X'] }] }, // bad point
+      { ...make(), active: 99 },
+      { ...make(), active: 'final' }, // no final exists
+    ]
+    for (const tournament of bad) {
+      vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify({ ...good, tournament }) }))
+      const loaded = loadApp()
+      expect(loaded.tournament).toBeNull()
+      expect(loaded.session).not.toBeNull()
+    }
+  })
+
+})
+
+describe('bracket storage', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', fakeStorage())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('round-trips a bracket in progress', () => {
+    const bracket = { ...bracketPoint(createBracket(['a', 'b', 'c', 'd'], 16), 0, 'A'), active: 0 }
+    saveApp({ ...sampleApp(), bracket })
+    expect(loadApp().bracket).toEqual(bracket)
+  })
+
+  it('old data has no bracket, and a corrupted one is dropped', () => {
+    const base = JSON.parse(JSON.stringify({ version: 1, ...sampleApp() }))
+    delete base.bracket
+    vi.stubGlobal('localStorage', fakeStorage({ [KEY]: JSON.stringify(base) }))
+    expect(loadApp().bracket).toBeNull()
+    vi.stubGlobal(
+      'localStorage',
+      fakeStorage({ [KEY]: JSON.stringify({ ...base, bracket: { teams: [], matches: 3 } }) }),
+    )
+    expect(loadApp().bracket).toBeNull()
+    expect(loadApp().session).not.toBeNull()
   })
 })

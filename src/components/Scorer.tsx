@@ -8,9 +8,19 @@ interface Props {
   teams: Teams
   history: MatchHistory
   onHistory: (next: MatchHistory) => void
-  onRematch: () => void
+  /** Left out for a tournament final: there is no rematch. */
+  onRematch?: () => void
   onNewMatch: () => void
-  onOpenHistory: () => void
+  /** Left out for a tournament final, which is not part of the match history. */
+  onOpenHistory?: () => void
+  /** What the "leave" buttons say. Defaults to "New match". */
+  leaveLabel?: string
+  /** Ask before leaving an unfinished match. Off when the match is saved elsewhere. Default true. */
+  confirmLeave?: boolean
+  /** Someone has to win (knockout matches): a level score can only play on, not end as a draw. */
+  noDraw?: boolean
+  /** Undo is blocked because a later match already depends on this result. */
+  undoLocked?: boolean
 }
 
 function statusText(state: MatchState): string {
@@ -35,7 +45,18 @@ function buttonScore(state: MatchState, team: TeamId): string {
   return cur.gameLabels?.[team] ?? ''
 }
 
-export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpenHistory }: Props) {
+export function Scorer({
+  teams,
+  history,
+  onHistory,
+  onRematch,
+  onNewMatch,
+  onOpenHistory,
+  leaveLabel = 'New match',
+  confirmLeave = true,
+  noDraw = false,
+  undoLocked = false,
+}: Props) {
   const state = history.present
   const board = getScoreboard(state)
   const live = state.status === 'inProgress'
@@ -49,7 +70,7 @@ export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpe
   const extraLabel = state.config.format.kind === 'games' ? 'Play one more game' : 'Play one more set'
 
   const confirmNewMatch = () => {
-    if (state.status !== 'complete' && !window.confirm('Leave this match? The score will be lost.')) {
+    if (confirmLeave && state.status !== 'complete' && !window.confirm('Leave this match? The score will be lost.')) {
       return
     }
     onNewMatch()
@@ -71,9 +92,11 @@ export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpe
             <button type="button" onClick={() => decide('extra')}>
               {extraLabel}
             </button>
-            <button type="button" onClick={() => decide('draw')}>
-              End as a draw
-            </button>
+            {!noDraw && (
+              <button type="button" onClick={() => decide('draw')}>
+                End as a draw
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -87,15 +110,19 @@ export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpe
             {state.winner === 'draw' ? 'Draw!' : `${names[state.winner as TeamId]} win!`}
           </p>
           <div className="panel-actions">
-            <button type="button" onClick={onRematch}>
-              Rematch (same teams)
-            </button>
+            {onRematch && (
+              <button type="button" onClick={onRematch}>
+                Rematch (same teams)
+              </button>
+            )}
             <button type="button" onClick={onNewMatch}>
-              New match
+              {leaveLabel}
             </button>
-            <button type="button" onClick={onOpenHistory}>
-              Match history
-            </button>
+            {onOpenHistory && (
+              <button type="button" onClick={onOpenHistory}>
+                Match history
+              </button>
+            )}
           </div>
         </section>
       )}
@@ -124,14 +151,14 @@ export function Scorer({ teams, history, onHistory, onRematch, onNewMatch, onOpe
         <button
           type="button"
           className="undo"
-          disabled={!canUndo(history)}
+          disabled={!canUndo(history) || undoLocked}
           onClick={() => onHistory(undo(history))}
         >
           ↶ Undo
         </button>
         {state.status !== 'complete' && (
           <button type="button" className="menu" onClick={confirmNewMatch}>
-            New match
+            {leaveLabel}
           </button>
         )}
       </footer>

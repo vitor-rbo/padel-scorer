@@ -8,6 +8,8 @@ A simple score keeper for padel, built to be used on a phone during a match. Big
 - **Undo** for mis-taps, including across game, set and tie-break boundaries.
 - **Standard format:** best of 3 sets. A set goes to 6 games with a 2-game margin, with a 7-point tie-break at 6-6. Optionally, a first-to-10 super tie-break can replace the deciding set.
 - **Custom format:** play a fixed number of games with no sets (for example always 3 games), or a custom number of sets. Every game or set is always played, even if the result is already decided.
+- **Tournament mode:** 3 to 8 teams play a round robin (4 teams = 6 matches). Each match is a fixed number of points (16 by default), so it can end in a win, draw or loss. A league table gives 3 points for a win, 1 for a draw and 0 for a loss, ties split by points difference and then points scored. When every match is played, the top two teams play a final. You choose how: a points match of any length (no draws; if level at the target, the next point wins), or a regular padel match with your own sets, games and deuce rules. Undo works on every match, and a tournament in progress survives a refresh. Tournament matches are kept apart from the normal match history.
+- **Double elimination:** pick it when starting a tournament, with 4 teams (6 matches) or 8 teams (14 matches). It is drawn as a bracket: a winners bracket, a losers bracket for teams that have lost once, and a grand final. Teams are filled into later matches automatically as results come in. Choose once, when you create it, how every match is played: **points matches** (first to a target such as 16, playing on if level) or **regular matches** with your own rules (best of 3 sets, sets, or a fixed number of games such as 3, with your deuce rules). Either way there is always a winner.
 - **Level scores:** if an even number of games or sets ends level, you choose between a draw and one extra game or set.
 - **Deuce rules:** at 40-40 choose between advantage with a golden point on the third deuce (the default), a straight golden point, or traditional advantage with no limit.
 - **Team names** are optional and can be changed for each match, which makes rotating pairs easy. Rematch keeps the same teams and rules.
@@ -57,7 +59,8 @@ src/
     game.ts       Points within a game, deuce handling, tie-breaks
     match.ts      Sets, super tie-break, fixed-games mode, level-score decisions
     history.ts    Undo
-  components/   Welcome, Setup, Scorer and Scoreboard screens
+  tournament/   Round robin fixtures, league table, final, and the double elimination bracket for 4 or 8 teams (pure TypeScript, unit tested)
+  components/   Welcome, Setup, Scorer, Scoreboard and the tournament screens
   setup.ts      Turns the setup screen choices into a rules configuration
   storage.ts    Saving and loading the match, tolerant of missing or corrupt data
   archive.ts    What a finished match looks like and how its result is described

@@ -377,7 +377,8 @@ input:focus-visible {
   font-weight: 700;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   min-height: 52px;
   padding: 8px 12px;
@@ -458,6 +459,21 @@ input:focus-visible {
 
 .stepper button:disabled {
   opacity: 0.35;
+}
+
+/* Under the Match type choices: leave a gap above, and make the buttons a little smaller. */
+.choices + .stepper {
+  margin-top: 16px;
+}
+
+.stepper.compact button {
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+}
+
+.stepper.compact output {
+  font-size: 1.4rem;
 }
 
 .stepper output {
@@ -967,4 +983,266 @@ input:focus-visible {
   .back:hover {
     color: var(--ink);
   }
+}
+
+/* -------------------------------------------------------------- Tournament */
+
+.lead-small {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.tournament {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+
+.tournament h1 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.tournament h2 {
+  margin: 24px 0 8px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.tournament h3 {
+  margin: 12px 0 6px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.tournament .panel {
+  margin: 12px 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.league {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.league th,
+.league td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.league thead th {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.league .name-col {
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.league .rank {
+  display: inline-block;
+  min-width: 1.4ch;
+  color: var(--muted);
+}
+
+.league .pts {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+/* The top two teams get the final once the league is over. */
+.league tr.finalist .name-col,
+.league tr.finalist .pts {
+  color: var(--team-a);
+}
+
+.fixture-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.fixture button {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.fixture.finished button {
+  border-color: transparent;
+}
+
+.fx-team {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.fx-team.right {
+  text-align: right;
+}
+
+.fx-team.won {
+  color: var(--team-a);
+}
+
+.fx-score {
+  min-width: 4.5ch;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-action {
+  min-width: 5ch;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.final-picker {
+  display: grid;
+  gap: 12px;
+}
+
+/* Bracket matches whose teams are not known yet. */
+.fixture.waiting button {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.fx-team.empty {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.match-no {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------ Bracket drawing */
+
+/* The drawing keeps its natural size and scrolls sideways on a narrow phone. */
+.bracket-wrap {
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px 8px;
+}
+
+.bracket {
+  display: block;
+  max-width: none;
+}
+
+.bk-title {
+  fill: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bk-line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+.bk-box {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.bk-box.won {
+  stroke: var(--team-a);
+}
+
+.bk-name {
+  fill: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.bk-name.empty {
+  fill: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.bk-name.won {
+  fill: var(--team-a);
+}
+
+.bk-match {
+  outline: none;
+}
+
+.bk-pill {
+  fill: var(--bg);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.bk-pill-text {
+  fill: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.bk-match.ready {
+  cursor: pointer;
+}
+
+.bk-match.ready .bk-pill {
+  fill: var(--ink);
+  stroke: var(--ink);
+}
+
+.bk-match.ready .bk-pill-text {
+  fill: var(--on-team);
+}
+
+.bk-match.done .bk-pill {
+  fill: var(--surface-2);
+  stroke: var(--line);
+}
+
+.bk-match.done .bk-pill-text {
+  fill: var(--ink);
+}
+
+.bk-match:focus-visible .bk-pill {
+  stroke: #ffb300;
+  stroke-width: 3;
 }
